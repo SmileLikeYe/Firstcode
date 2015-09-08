@@ -1,0 +1,114 @@
+package com.smile.broadcasttest;
+
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class MainActivity extends Activity {
+
+    public NetworkChangeReceiver networkChangeReceiver;
+
+    public IntentFilter intentFilter;
+
+    private LocalBroadcastManager localBroadcastManager;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        intentFilter = new IntentFilter();
+        intentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        networkChangeReceiver = new NetworkChangeReceiver();
+        registerReceiver(networkChangeReceiver, intentFilter);
+
+        Button button = (Button) findViewById(R.id.button);
+        final TextView textView = (TextView) findViewById(R.id.text_view);
+
+        LocalBroadcastRecevier localBroadcastRecevier = new LocalBroadcastRecevier();
+        localBroadcastManager.getInstance(this);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent("com.smile.broadcasttest.CC_CALL");
+                sendBroadcast(intent);
+                sendOrderedBroadcast(intent,null);
+                localBroadcastManager.sendBroadcast(intent);
+                textView.setText("Thx for your call, smile will remember Cc‘ call for erver");
+            }
+        });
+        localBroadcastManager.registerReceiver(localBroadcastRecevier,intentFilter);
+    }
+
+    class LocalBroadcastRecevier extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Toast.makeText(context, "Hello CC",Toast.LENGTH_LONG).show();
+        }
+    }
+
+    class NetworkChangeReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+
+            ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo networkInfo =  connectivityManager.getActiveNetworkInfo();
+            if (networkInfo != null && networkInfo.isAvailable()) {
+                Toast.makeText(context, "Network is good", Toast.LENGTH_SHORT).show();
+                Log.d("MainActivity", "Network is good: " + networkInfo.getState().toString());
+
+            }else {
+                Toast.makeText(context, "Network is bad ", Toast.LENGTH_SHORT).show();
+                if (networkInfo != null) {
+                    Log.d("MainActivity", "Network is bad: " + networkInfo.getState().toString());
+                }else {
+                    Log.d("MainActivity", "Network is bad: null" );
+                }
+            }
+            abortBroadcast();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(networkChangeReceiver);
+    }
+}
